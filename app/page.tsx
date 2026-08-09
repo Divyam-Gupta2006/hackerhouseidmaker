@@ -44,62 +44,66 @@ export default function Home() {
 
   const [result, setResult] = useState<string | null>(null);
 
-const [housePass, setHousePass] = useState("");
-const [cardUrl, setCardUrl] = useState<string | null>(null);
+  const [housePass, setHousePass] = useState("");
+  const [cardUrl, setCardUrl] = useState<string | null>(null);
 
+  useEffect(() => {
+    setHousePass(generateHousePass());
+  }, []);
 
+  useEffect(() => {
+    if (!photo || !housePass) return;
 
-useEffect(() => {
-  setHousePass(generateHousePass());
-}, []);
+    const timeout = setTimeout(async () => {
+      try {
+        const canvas = await renderCard({
+          photo,
 
-useEffect(() => {
-  if (!photo || !housePass) return;
+          builder: form.builder || "YOUR NAME",
+          role: form.role || "YOUR ROLE",
+          crew: form.crew || "YOUR CREW",
+          project: form.project || "YOUR PROJECT",
 
-  const timeout = setTimeout(async () => {
-    try {
-      const canvas = await renderCard({
-        photo,
+          beachBag: [
+            form.beachBag[0] || "STACK",
+            form.beachBag[1] || "STACK",
+            form.beachBag[2] || "STACK",
+          ],
 
-        builder: form.builder || "YOUR NAME",
-        role: form.role || "YOUR ROLE",
-        crew: form.crew || "YOUR CREW",
-        project: form.project || "YOUR PROJECT",
+          callsign: form.callsign || "YOUR CALLSIGN",
 
-        beachBag: [
-          form.beachBag[0] || "STACK",
-          form.beachBag[1] || "STACK",
-          form.beachBag[2] || "STACK",
-        ],
+          housePass,
+        });
 
-        callsign: form.callsign || "YOUR CALLSIGN",
+const newResult = canvas.toDataURL("image/png");
 
-        housePass,
-      });
+setResult(newResult);
 
-      setResult(canvas.toDataURL("image/png"));
-    }  catch (error) {
-  console.error("CARD RENDERING FAILED");
-  console.error("RAW ERROR:", error);
+// The current card changed, so the previous
+// Cloudinary upload is no longer valid.
+setCardUrl(null);
+      } catch (error) {
+        console.error("CARD RENDERING FAILED");
+        console.error("RAW ERROR:", error);
 
-  try {
-    console.error(
-      "ERROR JSON:",
-      JSON.stringify(error, null, 2)
-    );
-  } catch {
-    console.error("Could not stringify error");
-  }
+        try {
+          console.error(
+            "ERROR JSON:",
+            JSON.stringify(error, null, 2)
+          );
+        } catch {
+          console.error("Could not stringify error");
+        }
 
-  if (error instanceof Error) {
-    console.error("MESSAGE:", error.message);
-    console.error("STACK:", error.stack);
-  }
-}
-  }, 250);
+        if (error instanceof Error) {
+          console.error("MESSAGE:", error.message);
+          console.error("STACK:", error.stack);
+        }
+      }
+    }, 250);
 
-  return () => clearTimeout(timeout);
-}, [form, photo, housePass]);
+    return () => clearTimeout(timeout);
+  }, [form, photo, housePass]);
 
   // -----------------------------
   // PHOTO UPLOAD
@@ -140,50 +144,84 @@ useEffect(() => {
   }
 
 async function uploadGeneratedCard() {
-  if (!result || !housePass) return;
+  if (!photo || !housePass) return;
 
   try {
     setIsProcessing(true);
 
+    // Generate a completely fresh card from
+    // the CURRENT form state.
+    const canvas = await renderCard({
+      photo,
+
+      builder: form.builder || "YOUR NAME",
+
+      role: form.role || "YOUR ROLE",
+
+      crew: form.crew || "YOUR CREW",
+
+      project: form.project || "YOUR PROJECT",
+
+      beachBag: [
+        form.beachBag[0] || "STACK",
+        form.beachBag[1] || "STACK",
+        form.beachBag[2] || "STACK",
+      ],
+
+      callsign:
+        form.callsign || "YOUR CALLSIGN",
+
+      housePass,
+    });
+
+    // Use this freshly generated image.
+    const freshResult =
+      canvas.toDataURL("image/png");
+
+    // Update the preview state too.
+    setResult(freshResult);
+
+    // Upload THIS image, not the old result state.
     const url = await uploadCard(
-      result,
+      freshResult,
       housePass,
     );
 
-    
-
     setCardUrl(url);
 
-    console.log("CARD URL:", url);
+
+
   } catch (error) {
-    console.error("Card upload failed:", error);
+    console.error(
+      "❌ CURRENT CARD UPLOAD FAILED:",
+      error,
+    );
   } finally {
     setIsProcessing(false);
   }
 }
+  function shareToX() {
+    if (!cardUrl) return;
 
-function shareToX() {
-  if (!cardUrl) return;
+    const shareUrl =
+      `${window.location.origin}/card/${housePass}` +
+      `?image=${encodeURIComponent(cardUrl)}`;
 
-  const shareUrl =
-    `${window.location.origin}/card/${housePass}` +
-    `?image=${encodeURIComponent(cardUrl)}`;
+    const text =
+      `Just checked into Hacker House Goa 🏝️\n\n` +
+      `Building, shipping & vibing from the House.\n\n` +
+      `#FrameInGoa`;
 
-  const text =
-    `Just checked into Hacker House Goa 🏝️\n\n` +
-    `Building, shipping & vibing from the House.\n\n` +
-    `#FrameInGoa`;
+    const xUrl =
+      `https://x.com/intent/post?text=${encodeURIComponent(text)}` +
+      `&url=${encodeURIComponent(shareUrl)}`;
 
-  const xUrl =
-    `https://x.com/intent/post?text=${encodeURIComponent(text)}` +
-    `&url=${encodeURIComponent(shareUrl)}`;
-
-  window.open(
-    xUrl,
-    "_blank",
-    "noopener,noreferrer",
-  );
-}
+    window.open(
+      xUrl,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  }
 
   // -----------------------------
   // FIELD UPDATE
@@ -220,12 +258,6 @@ function shareToX() {
   }
 
   // -----------------------------
-  // LIVE CARD RENDER
-  // -----------------------------
-
- 
-
-  // -----------------------------
   // DOWNLOAD
   // -----------------------------
 
@@ -242,66 +274,124 @@ function shareToX() {
   }
 
   return (
-    <main className="min-h-screen bg-[#07110d] px-4 py-8 text-white">
-
-      <div className="mx-auto max-w-7xl">
-
-        {/* HEADER */}
-
-        <div className="mb-8">
-          <p className="mb-2 text-sm font-bold tracking-[0.3em] text-[#FE017E]">
-            HACKER HOUSE GOA 2026
-          </p>
-
-          <h1 className="text-4xl font-black">
-            Build Your Goa Identity
-          </h1>
-
-          <p className="mt-2 text-white/60">
-            Create your official Hacker House Goa builder pass.
-          </p>
+    <main className="min-h-screen bg-[#07110D] text-[#F3EAD7] selection:bg-[#FE017E] selection:text-white relative pb-20">
+      
+      {/* MINIMAL GOA NAVIGATION */}
+      <nav className="border-b-2 border-[#FFC629]/30 bg-[#064B32]/60 backdrop-blur-md px-6 py-4 sticky top-0 z-50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🌴</span>
+          <span className="font-lovelo text-lg font-black tracking-wider text-[#FFC629]">
+            HH//GOA
+          </span>
         </div>
+        <div className="flex items-center gap-4 text-xs font-mono">
+          <span className="hidden sm:inline border border-[#FE017E] px-2 py-1 text-[#FE017E] uppercase tracking-widest font-bold">
+            28 — 31 OCT 2026
+          </span>
+          <a
+            href="#generator"
+            className="bg-[#FE017E] hover:bg-[#FE017E]/80 text-white font-bold px-4 py-2 transition shadow-[3px_3px_0px_0px_#FFC629] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase tracking-wider"
+          >
+            BUILD PASS ↓
+          </a>
+        </div>
+      </nav>
 
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-8">
 
-        {/* MAIN GRID */}
+        {/* HERO SECTION */}
+        <section className="relative mb-12 border-4 border-[#006B3C] bg-[#064B32] p-6 sm:p-10 shadow-goa overflow-hidden">
+          {/* Background Sun Ray Rays Motif */}
+          <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-[#FFC629]/10 pointer-events-none blur-2xl"></div>
+          <div className="absolute right-8 top-8 opacity-20 hidden md:block text-8xl pointer-events-none select-none">
+            ☀️
+          </div>
 
-        <div className="grid gap-8 lg:grid-cols-[420px_1fr]">
+          <div className="relative z-10 max-w-3xl">
+            <div className="inline-flex items-center gap-2 border-2 border-[#FFC629] bg-[#07110D] px-3 py-1 text-xs font-mono font-bold tracking-[0.25em] text-[#FE017E] mb-4 shadow-[3px_3px_0px_0px_#FFC629]">
+              <span>★</span> HACKER HOUSE GOA 2026 <span>★</span>
+            </div>
 
+            <h1 className="font-lovelo text-4xl sm:text-6xl font-black uppercase tracking-tight text-[#FFC629] leading-none mb-4">
+              BUILD YOUR GOA IDENTITY.
+            </h1>
+
+            <p className="text-base sm:text-lg text-[#F3EAD7]/90 font-sans max-w-2xl leading-relaxed mb-6">
+              Welcome to the check-in desk. Upload your face, forge your builder credentials, and claim your official pass into the 2026 beach house residency.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-[#FFC629]">
+              <span className="flex items-center gap-1.5 border border-[#FFC629]/40 bg-[#07110D]/60 px-3 py-1.5">
+                <span>📍</span> GOA, INDIA
+              </span>
+              <span className="flex items-center gap-1.5 border border-[#FFC629]/40 bg-[#07110D]/60 px-3 py-1.5">
+                <span>⚡</span> VISA STATUS: OPEN
+              </span>
+              <span className="flex items-center gap-1.5 border border-[#FFC629]/40 bg-[#07110D]/60 px-3 py-1.5">
+                <span>🏷️</span> #FrameInGoa
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* MAIN GENERATOR GRID */}
+        <div id="generator" className="grid gap-8 lg:grid-cols-[450px_1fr] items-start">
 
           {/* ========================= */}
-          {/* FORM */}
+          {/* FORM (CHECK-IN DESK) */}
           {/* ========================= */}
 
-          <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+          <section className="border-4 border-[#006B3C] bg-[#F3EAD7] p-6 text-[#07110D] shadow-goa relative">
+            
+            {/* Header Stamp */}
+            <div className="flex items-center justify-between border-b-2 border-[#07110D] pb-4 mb-6">
+              <div>
+                <span className="text-[10px] font-mono font-bold tracking-widest text-[#006B3C] uppercase block">
+                  FORM_REF :: HH26-ENTRY
+                </span>
+                <h2 className="font-lovelo text-2xl font-black text-[#07110D]">
+                  CHECK-IN DESK
+                </h2>
+              </div>
+              <div className="stamp-badge border-2 border-[#FE017E] bg-[#FE017E]/10 px-2 py-1 text-[10px] font-mono font-bold text-[#FE017E] uppercase">
+                IDENTITY DOC
+              </div>
+            </div>
 
-            <h2 className="mb-6 text-xl font-bold">
-              Your Details
-            </h2>
-
-
-            {/* PHOTO */}
-
+            {/* PHOTO UPLOADER */}
             <div className="mb-6">
-
-              <label className="mb-2 block text-sm font-bold">
-                PHOTO
+              <label className="mb-2 flex items-center justify-between text-xs font-mono font-bold text-[#006B3C] uppercase">
+                <span>[FIELD_00] // PORTRAIT_PHOTO</span>
+                <span className="text-[10px] text-[#FE017E]">REQUIRED</span>
               </label>
 
-              <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/20 bg-black/20 p-8 text-center transition hover:border-[#FE017E]">
-
-                <span className="text-3xl">
-                  📸
-                </span>
-
-                <span className="mt-3 font-bold">
-                  {photo
-                    ? "Change Photo"
-                    : "Upload Your Photo"}
-                </span>
-
-                <span className="mt-1 text-xs text-white/50">
-                  JPG, PNG or WebP
-                </span>
+              <label className="group relative flex cursor-pointer flex-col items-center justify-center border-2 border-dashed border-[#07110D] bg-[#07110D]/5 p-6 text-center transition hover:border-[#FE017E] hover:bg-[#07110D]/10">
+                
+                {photo ? (
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">📸</span>
+                    <div className="text-left">
+                      <span className="font-bold text-sm text-[#07110D] block uppercase">
+                        CHANGE BUILDER PHOTO
+                      </span>
+                      <span className="text-[10px] font-mono text-[#006B3C]">
+                        BACKGROUND AUTOMATICALLY REMOVED
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-2 text-3xl transition-transform group-hover:scale-110">
+                      📸
+                    </div>
+                    <span className="font-lovelo text-base font-black text-[#07110D] group-hover:text-[#FE017E]">
+                      DROP YOUR FACE HERE
+                    </span>
+                    <span className="mt-1 text-[11px] font-mono text-[#07110D]/60">
+                      PASSPORT STYLE • JPG, PNG, WEBP
+                    </span>
+                  </>
+                )}
 
                 <input
                   type="file"
@@ -310,76 +400,66 @@ function shareToX() {
                   disabled={isProcessing}
                   className="hidden"
                 />
-
               </label>
 
               {isProcessing && (
-                <p className="mt-3 text-center text-sm text-[#FE017E]">
-                  ✨ Preparing your photo...
-                </p>
+                <div className="mt-3 flex items-center justify-center gap-2 border-2 border-[#FE017E] bg-[#FE017E]/10 p-2 text-xs font-mono font-bold text-[#FE017E] animate-pulse">
+                  <span>⚡</span> FORGING PHOTO & REMOVING BG...
+                </div>
               )}
-
             </div>
 
-
             {/* BUILDER */}
-
             <Input
+              fieldNum="01"
               label="BUILDER"
-              placeholder="Your name"
+              placeholder="Satoshi Nakamoto"
               value={form.builder}
               onChange={(value) =>
                 updateField("builder", value)
               }
             />
 
-
             {/* ROLE */}
-
             <Input
+              fieldNum="02"
               label="ROLE"
-              placeholder="Frontend Developer"
+              placeholder="Frontend Developer / Vibe Coder"
               value={form.role}
               onChange={(value) =>
                 updateField("role", value)
               }
             />
 
-
             {/* CREW */}
-
             <Input
+              fieldNum="03"
               label="CREW"
-              placeholder="Team name"
+              placeholder="Gap Bridgers / Solo"
               value={form.crew}
               onChange={(value) =>
                 updateField("crew", value)
               }
             />
 
-
             {/* PROJECT */}
-
             <Input
+              fieldNum="04"
               label="CURRENTLY SHIPPING"
-              placeholder="Project name"
+              placeholder="Autonomous AI Agent / DeFi Protocol"
               value={form.project}
               onChange={(value) =>
                 updateField("project", value)
               }
             />
 
-
             {/* BEACH BAG */}
-
             <div className="mb-5">
-
-              <label className="mb-2 block text-sm font-bold">
-                BEACH BAG
+              <label className="mb-2 block text-xs font-mono font-bold text-[#006B3C] uppercase">
+                [FIELD_05] // BEACH BAG (TECH STACK)
               </label>
 
               <div className="grid grid-cols-3 gap-2">
-
                 {form.beachBag.map((value, index) => (
                   <input
                     key={index}
@@ -390,121 +470,165 @@ function shareToX() {
                         e.target.value,
                       )
                     }
-                    placeholder={`Stack ${index + 1}`}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-sm outline-none transition focus:border-[#FE017E]"
+                    placeholder={`Stack 0${index + 1}`}
+                    className="w-full border-2 border-[#07110D] bg-white px-3 py-2 text-xs font-mono font-bold text-[#07110D] placeholder:text-[#07110D]/30 outline-none transition focus:border-[#FE017E] focus:ring-1 focus:ring-[#FE017E]"
                   />
                 ))}
-
               </div>
-
             </div>
 
-
             {/* CALLSIGN */}
-
             <Input
+              fieldNum="06"
               label="CALLSIGN"
-              placeholder="Vibe Coder"
+              placeholder="Cypherpunk / Vibe Coder"
               value={form.callsign}
               onChange={(value) =>
                 updateField("callsign", value)
               }
             />
 
+            {/* HOUSE PASS PREVIEW BOX */}
+            <div className="mt-6 border-2 border-[#07110D] bg-[#006B3C] p-4 text-[#F3EAD7] shadow-[4px_4px_0px_0px_#07110D]">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] font-mono font-bold tracking-widest text-[#FFC629] uppercase">
+                  ASSIGNED_HOUSE_PASS
+                </p>
+                <span className="text-[10px] font-mono text-[#F3EAD7]/70">AUTOMATIC</span>
+              </div>
 
-            {/* HOUSE PASS */}
-
-            <div className="mt-6 rounded-xl bg-[#FE017E]/10 p-4">
-
-              <p className="text-xs font-bold tracking-widest text-white/50">
-                HOUSE PASS
-              </p>
-
-              <p className="mt-1 font-mono text-xl font-bold text-[#FE017E]">
+              <p className="font-mono text-2xl font-black text-[#FFC629] tracking-wider">
                 {housePass}
               </p>
-
-              <p className="mt-1 text-xs text-white/40">
-                Automatically generated
-              </p>
-
             </div>
 
           </section>
 
 
           {/* ========================= */}
-          {/* PREVIEW */}
+          {/* PREVIEW (LIVE ID CARD) */}
           {/* ========================= */}
 
           <section className="flex flex-col items-center">
 
-            <div className="mb-4 flex w-full max-w-[600px] items-center justify-between">
+            {/* CONTROL BAR */}
+            <div className="mb-6 flex w-full max-w-[600px] flex-wrap items-center justify-between gap-4 border-2 border-[#006B3C] bg-[#064B32] p-4 shadow-goa">
 
               <div>
-                <p className="text-sm font-bold text-white/50">
-                  LIVE PREVIEW
-                </p>
-
-                <p className="text-xs text-white/30">
-                  Updates automatically
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-[#FE017E] animate-ping"></span>
+                  <p className="font-lovelo text-sm font-black text-[#FFC629]">
+                    LIVE BUILDER CARD
+                  </p>
+                </div>
+                <p className="text-[11px] font-mono text-[#F3EAD7]/70">
+                  REAL-TIME CANVAS RENDER
                 </p>
               </div>
 
-              {result && (
-  <button
-    onClick={uploadGeneratedCard}
-    disabled={isProcessing}
-    className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-black transition hover:scale-105 disabled:opacity-50"
-  >
-    {isProcessing ? "Preparing..." : "Create Share Card"}
-  </button>
-)}
-{cardUrl && (
-  <button
-    onClick={shareToX}
-    className="rounded-xl bg-black px-6 py-3 font-bold text-white transition hover:scale-105"
-  >
-    𝕏 Share to X
-  </button>
-)}
+              <div className="flex items-center gap-2">
+                {result && (
+                  <button
+                    onClick={uploadGeneratedCard}
+                    disabled={isProcessing}
+                    className="border-2 border-[#07110D] bg-[#FFC629] px-4 py-2 text-xs font-mono font-bold text-[#07110D] transition hover:bg-white shadow-[3px_3px_0px_0px_#07110D] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none disabled:opacity-50 uppercase"
+                  >
+                    {isProcessing ? "PROCESSING..." : "GENERATE CARD"}
+                  </button>
+                )}
+
+                {cardUrl && (
+                  <button
+                    onClick={shareToX}
+                    className="border-2 border-[#07110D] bg-[#FE017E] px-4 py-2 text-xs font-mono font-bold text-white transition hover:bg-[#FE017E]/90 shadow-[3px_3px_0px_0px_#FFC629] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none uppercase"
+                  >
+                    𝕏 SHARE TO X
+                  </button>
+                )}
+              </div>
 
             </div>
 
-
-            <div className="w-full max-w-[600px] overflow-hidden rounded-2xl shadow-2xl">
-
-              {result ? (
-                <img
-                  src={result}
-                  alt="Your Hacker House Goa Builder Card"
-                  className="block w-full"
-                />
-              ) : (
-                <div className="flex aspect-[3/5] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-center text-white/30">
-
-                  <div>
-                    <div className="mb-4 text-5xl">
-                      🌴
-                    </div>
-
-                    <p className="font-bold">
-                      Upload a photo to begin
-                    </p>
-
-                    <p className="mt-1 text-sm">
-                      Your Goa Builder Pass will appear here
-                    </p>
-                  </div>
-
+            {/* CARD CONTAINER */}
+            <div className="card-preview-container relative w-full max-w-[600px]">
+              
+              {/* Optional Success Stamp Overlay */}
+              {cardUrl && (
+                <div className="absolute -top-4 -right-4 z-20 stamp-badge border-4 border-[#FE017E] bg-[#FE017E] text-white font-lovelo px-4 py-2 text-sm font-black tracking-widest shadow-goa-dark uppercase">
+                  ✓ VISA APPROVED
                 </div>
               )}
 
+              <div className="w-full overflow-hidden border-4 border-[#07110D] bg-[#07110D] shadow-goa-dark">
+
+                {result ? (
+                  <img
+                    src={result}
+                    alt="Your Hacker House Goa Builder Card"
+                    className="block w-full h-auto"
+                  />
+                ) : (
+                  <div className="flex aspect-[3/5] items-center justify-center border-2 border-dashed border-[#006B3C] bg-[#064B32]/40 p-8 text-center text-[#F3EAD7]">
+
+                    <div className="max-w-xs">
+                      <div className="mb-4 text-6xl">
+                        🏝️
+                      </div>
+
+                      <p className="font-lovelo text-xl font-black text-[#FFC629] mb-2">
+                        AWAITING BUILDER DATA
+                      </p>
+
+                      <p className="text-xs font-mono text-[#F3EAD7]/80 leading-relaxed">
+                        Upload a photo and complete your check-in details to forge your official Goa Builder Pass.
+                      </p>
+                    </div>
+
+                  </div>
+                )}
+
+              </div>
+
             </div>
+
+            {/* DOWNLOAD ACTION SECONDARY BUTTON */}
+            {result && (
+              <div className="mt-6">
+                <button
+                  onClick={downloadCard}
+                  className="border-2 border-[#FFC629] bg-[#07110D] px-6 py-3 font-mono text-xs font-bold text-[#FFC629] transition hover:bg-[#006B3C] shadow-[4px_4px_0px_0px_#FFC629] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase tracking-wider"
+                >
+                  ↓ DOWNLOAD HIGH-RES PNG
+                </button>
+              </div>
+            )}
 
           </section>
 
         </div>
+
+        {/* FOOTER */}
+        <footer className="mt-20 border-t-4 border-[#006B3C] bg-[#064B32] p-8 text-center font-mono text-xs text-[#F3EAD7]/80 shadow-goa">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-5xl mx-auto">
+            <div className="text-left">
+              <p className="font-lovelo text-lg font-black text-[#FFC629]">
+                HACKER HOUSE GOA 2026
+              </p>
+              <p className="text-[11px] text-[#F3EAD7]/60">
+                GOA, INDIA · 28—31 OCT 2026
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <span className="border border-[#FFC629]/40 px-2 py-1 text-[#FFC629]">
+                #FrameInGoa
+              </span>
+              <span className="border border-[#FE017E]/40 px-2 py-1 text-[#FE017E]">
+                HH26 // TRANSMISSION COMPLETE
+              </span>
+            </div>
+          </div>
+        </footer>
 
       </div>
 
@@ -518,11 +642,13 @@ function shareToX() {
 // ========================================
 
 function Input({
+  fieldNum,
   label,
   placeholder,
   value,
   onChange,
 }: {
+  fieldNum: string;
   label: string;
   placeholder: string;
   value: string;
@@ -531,8 +657,8 @@ function Input({
   return (
     <div className="mb-5">
 
-      <label className="mb-2 block text-sm font-bold">
-        {label}
+      <label className="mb-2 block text-xs font-mono font-bold text-[#006B3C] uppercase">
+        [FIELD_{fieldNum}] // {label}
       </label>
 
       <input
@@ -541,7 +667,7 @@ function Input({
           onChange(e.target.value)
         }
         placeholder={placeholder}
-        className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none transition placeholder:text-white/20 focus:border-[#FE017E]"
+        className="w-full border-2 border-[#07110D] bg-white px-4 py-2.5 text-xs font-mono font-bold text-[#07110D] placeholder:text-[#07110D]/30 outline-none transition focus:border-[#FE017E] focus:ring-1 focus:ring-[#FE017E]"
       />
 
     </div>

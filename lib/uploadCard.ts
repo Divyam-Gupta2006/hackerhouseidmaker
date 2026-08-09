@@ -22,7 +22,13 @@ export async function uploadCard(
 
   formData.append("file", blob, `${housePass}.png`);
   formData.append("upload_preset", uploadPreset);
-  formData.append("public_id", `hh-goa/${housePass}`);
+const uniqueId =
+  `${housePass}-${Date.now()}`;
+
+formData.append(
+  "public_id",
+  `hh-goa/${uniqueId}`,
+);
 
   const uploadResponse = await fetch(
     `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
@@ -42,5 +48,5 @@ export async function uploadCard(
 
   const result = await uploadResponse.json();
 
-  return result.secure_url as string;
+  return `${result.secure_url}?v=${Date.now()}`;
 }
