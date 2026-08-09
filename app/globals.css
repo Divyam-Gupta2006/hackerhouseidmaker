@@ -24,10 +24,25 @@ body {
   color: var(--cream);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   overflow-x: hidden;
+  position: relative;
   background-image: 
-    radial-gradient(circle at 15% 15%, rgba(255, 198, 41, 0.08) 0%, transparent 45%),
-    radial-gradient(circle at 85% 85%, rgba(254, 1, 126, 0.08) 0%, transparent 45%),
-    radial-gradient(circle at 50% 50%, rgba(0, 107, 60, 0.25) 0%, transparent 70%);
+    radial-gradient(circle at 15% 15%, rgba(255, 198, 41, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 85% 65%, rgba(254, 1, 126, 0.10) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(0, 107, 60, 0.30) 0%, transparent 70%);
+}
+
+/* Tactile Grain Texture Overlay */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 .font-samarkan {
@@ -59,4 +74,39 @@ body {
 
 .card-preview-container:hover {
   transform: translateY(-4px) rotate(0.5deg);
+}
+
+/* Micro Animations for Background Elements */
+@keyframes floatSlight {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(1deg); }
+}
+
+@keyframes waveMove {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-15px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes pulseSun {
+  0%, 100% { transform: scale(1); opacity: 0.15; }
+  50% { transform: scale(1.05); opacity: 0.22; }
+}
+
+.animate-float-slight {
+  animation: floatSlight 6s ease-in-out infinite;
+}
+
+.animate-wave {
+  animation: waveMove 12s ease-in-out infinite;
+}
+
+.animate-pulse-sun {
+  animation: pulseSun 8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-slight, .animate-wave, .animate-pulse-sun {
+    animation: none;
+  }
 }

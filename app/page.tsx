@@ -5,6 +5,7 @@ import { removeBackground } from "@imgly/background-removal";
 import { renderCard } from "@/lib/cardRenderer";
 import { uploadCard } from "@/lib/uploadCard";
 
+
 interface FormData {
   builder: string;
   role: string;
@@ -75,13 +76,13 @@ export default function Home() {
           housePass,
         });
 
-const newResult = canvas.toDataURL("image/png");
+        const newResult = canvas.toDataURL("image/png");
 
-setResult(newResult);
+        setResult(newResult);
 
-// The current card changed, so the previous
-// Cloudinary upload is no longer valid.
-setCardUrl(null);
+        // The current card changed, so the previous
+        // Cloudinary upload is no longer valid.
+        setCardUrl(null);
       } catch (error) {
         console.error("CARD RENDERING FAILED");
         console.error("RAW ERROR:", error);
@@ -109,7 +110,7 @@ setCardUrl(null);
   // PHOTO UPLOAD
   // -----------------------------
 
- async function handlePhotoUpload(
+async function handlePhotoUpload(
   e: ChangeEvent<HTMLInputElement>,
 ) {
   const file = e.target.files?.[0];
@@ -119,118 +120,46 @@ setCardUrl(null);
   try {
     setIsProcessing(true);
 
-    // --------------------------------
-    // 1. Load original image
-    // --------------------------------
+    let processedFile: File | Blob = file;
 
-    const originalUrl =
-      URL.createObjectURL(file);
+    // Convert iPhone HEIC/HEIF → JPEG
+    const isHEIC =
+      file.type === "image/heic" ||
+      file.type === "image/heif" ||
+      file.name.toLowerCase().endsWith(".heic") ||
+      file.name.toLowerCase().endsWith(".heif");
 
-    const originalImage =
-      new Image();
-
-    originalImage.src = originalUrl;
-
-    await new Promise<void>((resolve, reject) => {
-      originalImage.onload = () => resolve();
-      originalImage.onerror = () =>
-        reject(
-          new Error("Could not load image"),
-        );
-    });
-
-    URL.revokeObjectURL(originalUrl);
-
-    // --------------------------------
-    // 2. Downscale before AI processing
-    // --------------------------------
-
-    const MAX_SIZE = 1600;
-
-    let width = originalImage.naturalWidth;
-    let height = originalImage.naturalHeight;
-
-    const scale =
-      Math.min(
-        1,
-        MAX_SIZE / Math.max(width, height),
-      );
-
-    width = Math.round(width * scale);
-    height = Math.round(height * scale);
-
-    const resizeCanvas =
-      document.createElement("canvas");
-
-    resizeCanvas.width = width;
-    resizeCanvas.height = height;
-
-    const resizeCtx =
-      resizeCanvas.getContext("2d");
-
-    if (!resizeCtx) {
-      throw new Error(
-        "Could not create resize canvas",
-      );
-    }
-
-    resizeCtx.drawImage(
-      originalImage,
-      0,
-      0,
-      width,
-      height,
-    );
-
-    // JPEG keeps the input much smaller
-    const resizedBlob =
-      await new Promise<Blob>((resolve, reject) => {
-        resizeCanvas.toBlob(
-          (blob) => {
-            if (blob) {
-              resolve(blob);
-            } else {
-              reject(
-                new Error(
-                  "Could not resize image",
-                ),
-              );
-            }
-          },
-          "image/jpeg",
-          0.9,
-        );
+    if (isHEIC) {
+      const { default: heic2any } = await import("heic2any");
+      const converted = await heic2any({
+        blob: file,
+        toType: "image/jpeg",
+        quality: 0.9,
       });
 
-    // --------------------------------
-    // 3. Run background removal
-    // --------------------------------
+      processedFile = Array.isArray(converted)
+        ? converted[0]
+        : converted;
+    }
 
-    const processedBlob =
-      await removeBackground(
-        resizedBlob,
-      );
+    // Background removal
+    const blob = await removeBackground(
+      processedFile,
+    );
 
-    // --------------------------------
-    // 4. Load processed image
-    // --------------------------------
+    const url = URL.createObjectURL(blob);
 
-    const processedUrl =
-      URL.createObjectURL(
-        processedBlob,
-      );
-
-    const image =
-      new Image();
+    const image = new Image();
 
     image.onload = () => {
       setPhoto(image);
-      setCardUrl(null);
-      setIsProcessing(false);
 
-      URL.revokeObjectURL(
-        processedUrl,
-      );
+      // Previous uploaded card is no longer valid
+      setCardUrl(null);
+
+      URL.revokeObjectURL(url);
+
+      setIsProcessing(false);
     };
 
     image.onerror = () => {
@@ -238,14 +167,11 @@ setCardUrl(null);
         "Could not load processed image",
       );
 
+      URL.revokeObjectURL(url);
       setIsProcessing(false);
-
-      URL.revokeObjectURL(
-        processedUrl,
-      );
     };
 
-    image.src = processedUrl;
+    image.src = url;
 
   } catch (error) {
     console.error(
@@ -257,63 +183,62 @@ setCardUrl(null);
   }
 }
 
-async function uploadGeneratedCard() {
-  if (!photo || !housePass) return;
+  async function uploadGeneratedCard() {
+    if (!photo || !housePass) return;
 
-  try {
-    setIsProcessing(true);
+    try {
+      setIsProcessing(true);
 
-    // Generate a completely fresh card from
-    // the CURRENT form state.
-    const canvas = await renderCard({
-      photo,
+      // Generate a completely fresh card from
+      // the CURRENT form state.
+      const canvas = await renderCard({
+        photo,
 
-      builder: form.builder || "YOUR NAME",
+        builder: form.builder || "YOUR NAME",
 
-      role: form.role || "YOUR ROLE",
+        role: form.role || "YOUR ROLE",
 
-      crew: form.crew || "YOUR CREW",
+        crew: form.crew || "YOUR CREW",
 
-      project: form.project || "YOUR PROJECT",
+        project: form.project || "YOUR PROJECT",
 
-      beachBag: [
-        form.beachBag[0] || "STACK",
-        form.beachBag[1] || "STACK",
-        form.beachBag[2] || "STACK",
-      ],
+        beachBag: [
+          form.beachBag[0] || "STACK",
+          form.beachBag[1] || "STACK",
+          form.beachBag[2] || "STACK",
+        ],
 
-      callsign:
-        form.callsign || "YOUR CALLSIGN",
+        callsign:
+          form.callsign || "YOUR CALLSIGN",
 
-      housePass,
-    });
+        housePass,
+      });
 
-    // Use this freshly generated image.
-    const freshResult =
-      canvas.toDataURL("image/png");
+      // Use this freshly generated image.
+      const freshResult =
+        canvas.toDataURL("image/png");
 
-    // Update the preview state too.
-    setResult(freshResult);
+      // Update the preview state too.
+      setResult(freshResult);
 
-    // Upload THIS image, not the old result state.
-    const url = await uploadCard(
-      freshResult,
-      housePass,
-    );
+      // Upload THIS image, not the old result state.
+      const url = await uploadCard(
+        freshResult,
+        housePass,
+      );
 
-    setCardUrl(url);
+      setCardUrl(url);
 
-
-
-  } catch (error) {
-    console.error(
-      "❌ CURRENT CARD UPLOAD FAILED:",
-      error,
-    );
-  } finally {
-    setIsProcessing(false);
+    } catch (error) {
+      console.error(
+        "❌ CURRENT CARD UPLOAD FAILED:",
+        error,
+      );
+    }finally{
+      setIsProcessing(false);
+    }
   }
-}
+
   function shareToX() {
     if (!cardUrl) return;
 
@@ -388,10 +313,100 @@ async function uploadGeneratedCard() {
   }
 
   return (
-    <main className="min-h-screen bg-[#07110D] text-[#F3EAD7] selection:bg-[#FE017E] selection:text-white relative pb-20">
+    <main className="min-h-screen bg-[#07110D] text-[#F3EAD7] selection:bg-[#FE017E] selection:text-white relative pb-20 overflow-hidden">
       
+      {/* ========================================================= */}
+      {/* BACKGROUND DECORATIVE LAYERS (WORLD OF HACKER HOUSE GOA) */}
+      {/* ========================================================= */}
+      
+      {/* 1. GIANT OVERSIZED MARGIN TYPOGRAPHY */}
+      <div className="absolute top-24 left-[-2rem] pointer-events-none select-none z-0 hidden lg:block opacity-10">
+        <span className="font-samarkan text-[14rem] font-black text-[#FFC629] leading-none block rotate-90 origin-top-left">
+          GOA
+        </span>
+      </div>
+
+      <div className="absolute top-[40%] right-[-1rem] pointer-events-none select-none z-0 hidden lg:block opacity-[0.07]">
+        <div className="font-mono text-9xl font-black text-[#F3EAD7] tracking-tighter leading-none text-right">
+          BUILD<br />SHIP<br />VIBE
+        </div>
+      </div>
+
+      <div className="absolute bottom-32 left-4 pointer-events-none select-none z-0 hidden xl:block opacity-10">
+        <span className="font-lovelo text-8xl font-black text-[#FE017E] tracking-widest">
+          #FRAMEINGOA
+        </span>
+      </div>
+
+      {/* 2. RETRO SUN VECTOR BEHIND HERO */}
+      <div className="absolute top-[-50px] left-1/2 -translate-x-1/2 w-[800px] h-[800px] pointer-events-none z-0 select-none opacity-20 animate-pulse-sun">
+        <svg viewBox="0 0 200 200" className="w-full h-full fill-[#FFC629]">
+          <circle cx="100" cy="100" r="40" />
+          <g stroke="#FFC629" strokeWidth="2" strokeDasharray="4 4">
+            <line x1="100" y1="10" x2="100" y2="45" />
+            <line x1="100" y1="155" x2="100" y2="190" />
+            <line x1="10" y1="100" x2="45" y2="100" />
+            <line x1="155" y1="100" x2="190" y2="100" />
+            <line x1="36" y1="36" x2="61" y2="61" />
+            <line x1="139" y1="139" x2="164" y2="164" />
+            <line x1="36" y1="164" x2="61" y2="139" />
+            <line x1="139" y1="61" x2="164" y2="36" />
+          </g>
+        </svg>
+      </div>
+
+      {/* 3. PALM LEAF SILHOUETTE LAYERS */}
+      <div className="absolute top-10 left-[-30px] pointer-events-none z-0 select-none hidden md:block opacity-25 animate-float-slight">
+        <svg width="240" height="280" viewBox="0 0 100 100" fill="#006B3C">
+          <path d="M10,90 Q30,20 90,10 Q50,50 10,90 Z" />
+          <path d="M10,90 Q40,30 95,30 Q50,60 10,90 Z" />
+          <path d="M10,90 Q20,40 70,5 Q40,50 10,90 Z" />
+        </svg>
+      </div>
+
+      <div className="absolute top-[35%] right-[-40px] pointer-events-none z-0 select-none hidden md:block opacity-20 animate-float-slight" style={{ animationDelay: '2s' }}>
+        <svg width="280" height="320" viewBox="0 0 100 100" fill="#006B3C" transform="scale(-1, 1)">
+          <path d="M10,90 Q30,20 90,10 Q50,50 10,90 Z" />
+          <path d="M10,90 Q40,30 95,30 Q50,60 10,90 Z" />
+          <path d="M10,90 Q20,40 70,5 Q40,50 10,90 Z" />
+        </svg>
+      </div>
+
+      {/* 4. SCATTERED TRAVEL STICKERS & TELEMETRY LABELS */}
+      <div className="absolute top-48 right-[12%] pointer-events-none select-none z-0 hidden xl:block stamp-badge opacity-40">
+        <div className="border-2 border-[#FE017E] bg-[#FE017E]/10 px-3 py-1 text-xs font-mono font-bold text-[#FE017E]">
+          PASSPORT :: VISA_APPROVED
+        </div>
+      </div>
+
+      <div className="absolute top-[52%] left-[3%] pointer-events-none select-none z-0 hidden xl:block -rotate-6 opacity-30">
+        <div className="border border-[#FFC629] bg-[#07110D] p-2 text-[10px] font-mono text-[#FFC629] max-w-[160px]">
+          &gt; SYS_GOA_ONLINE<br />
+          &gt; LOC: 15.2993° N<br />
+          &gt; STATUS: VIBING
+        </div>
+      </div>
+
+      <div className="absolute top-[68%] right-[4%] pointer-events-none select-none z-0 hidden xl:block rotate-12 opacity-35">
+        <div className="border-2 border-[#FFC629] bg-[#FFC629] px-3 py-1 text-xs font-mono font-black text-[#07110D] shadow-[3px_3px_0px_0px_#FE017E]">
+          100% HUMAN BUILDER
+        </div>
+      </div>
+
+      {/* 5. RETRO OCEAN WAVE VECTOR AT BOTTOM */}
+      <div className="absolute bottom-0 left-0 w-full pointer-events-none z-0 select-none opacity-20 overflow-hidden leading-none">
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-[120%] h-24 text-[#006B3C] fill-current animate-wave">
+          <path d="M0,0 C150,90 350,-40 500,50 C650,140 900,-20 1200,40 L1200,120 L0,120 Z"></path>
+        </svg>
+      </div>
+
+
+      {/* ========================================================= */}
+      {/* FOREGROUND CONTENT (UNCHANGED FUNCTIONAL UI) */}
+      {/* ========================================================= */}
+
       {/* MINIMAL GOA NAVIGATION */}
-      <nav className="border-b-2 border-[#FFC629]/30 bg-[#064B32]/60 backdrop-blur-md px-6 py-4 sticky top-0 z-50 flex items-center justify-between">
+      <nav className="border-b-2 border-[#FFC629]/30 bg-[#064B32]/80 backdrop-blur-md px-6 py-4 sticky top-0 z-50 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🌴</span>
           <span className="font-samarkan text-lg font-black tracking-wider text-[#FFC629]">
@@ -411,7 +426,7 @@ async function uploadGeneratedCard() {
         </div>
       </nav>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-8">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 pt-8">
 
         {/* HERO SECTION */}
         <section className="relative mb-12 border-4 border-[#006B3C] bg-[#064B32] p-6 sm:p-10 shadow-goa overflow-hidden">
@@ -455,7 +470,7 @@ async function uploadGeneratedCard() {
           {/* FORM (CHECK-IN DESK) */}
           {/* ========================= */}
 
-          <section className="border-4 border-[#006B3C] bg-[#F3EAD7] p-6 text-[#07110D] shadow-goa relative">
+          <section className="border-4 border-[#006B3C] bg-[#F3EAD7] p-6 text-[#07110D] shadow-goa relative z-10">
             
             {/* Header Stamp */}
             <div className="flex items-center justify-between border-b-2 border-[#07110D] pb-4 mb-6">
@@ -509,7 +524,7 @@ async function uploadGeneratedCard() {
 
                 <input
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
                   onChange={handlePhotoUpload}
                   disabled={isProcessing}
                   className="hidden"
@@ -623,7 +638,7 @@ async function uploadGeneratedCard() {
           {/* PREVIEW (LIVE ID CARD) */}
           {/* ========================= */}
 
-          <section className="flex flex-col items-center">
+          <section className="flex flex-col items-center relative z-10">
 
             {/* CONTROL BAR */}
             <div className="mb-6 flex w-full max-w-[600px] flex-wrap items-center justify-between gap-4 border-2 border-[#006B3C] bg-[#064B32] p-4 shadow-goa">
@@ -645,7 +660,7 @@ async function uploadGeneratedCard() {
                   <button
                     onClick={uploadGeneratedCard}
                     disabled={isProcessing}
-                    className="border-2 border-[#07110D] bg-[#FFC629] px-4 py-2 text-xs font-mono font-bold text-[#07110D] transition hover:bg-white shadow-[3px_3px_0px_0px_#07110D] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none disabled:opacity-50 uppercase"
+                    className="border-2 border-[#07110D] bg-[#FFC629] px-4 py-2 text-xs font-mono font-bold text-[#07110D] transition hover:bg-white shadow-[3px_3px_0px_0px_#07110D] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none disabled:opacity-50 uppercase cursor-pointer"
                   >
                     {isProcessing ? "PROCESSING..." : "GENERATE CARD"}
                   </button>
@@ -654,7 +669,7 @@ async function uploadGeneratedCard() {
                 {cardUrl && (
                   <button
                     onClick={shareToX}
-                    className="border-2 border-[#07110D] bg-[#FE017E] px-4 py-2 text-xs font-mono font-bold text-white transition hover:bg-[#FE017E]/90 shadow-[3px_3px_0px_0px_#FFC629] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none uppercase"
+                    className="border-2 border-[#07110D] bg-[#FE017E] px-4 py-2 text-xs font-mono font-bold text-white transition hover:bg-[#FE017E]/90 shadow-[3px_3px_0px_0px_#FFC629] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none uppercase cursor-pointer"
                   >
                     𝕏 SHARE TO X
                   </button>
@@ -710,7 +725,7 @@ async function uploadGeneratedCard() {
               <div className="mt-6">
                 <button
                   onClick={downloadCard}
-                  className="border-2 border-[#FFC629] bg-[#07110D] px-6 py-3 font-mono text-xs font-bold text-[#FFC629] transition hover:bg-[#006B3C] shadow-[4px_4px_0px_0px_#FFC629] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase tracking-wider"
+                  className="border-2 border-[#FFC629] bg-[#07110D] px-6 py-3 font-mono text-xs font-bold text-[#FFC629] transition hover:bg-[#006B3C] shadow-[4px_4px_0px_0px_#FFC629] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase tracking-wider cursor-pointer"
                 >
                   ↓ DOWNLOAD HIGH-RES PNG
                 </button>
@@ -722,7 +737,7 @@ async function uploadGeneratedCard() {
         </div>
 
         {/* FOOTER */}
-        <footer className="mt-20 border-t-4 border-[#006B3C] bg-[#064B32] p-8 text-center font-mono text-xs text-[#F3EAD7]/80 shadow-goa">
+        <footer className="relative z-10 mt-20 border-t-4 border-[#006B3C] bg-[#064B32] p-8 text-center font-mono text-xs text-[#F3EAD7]/80 shadow-goa">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-5xl mx-auto">
             <div className="text-left">
               <p className="font-samarkan text-lg font-black text-[#FFC629]">
