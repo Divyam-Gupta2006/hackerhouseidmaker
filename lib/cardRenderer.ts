@@ -121,7 +121,7 @@ function drawCenteredText(
 
   // Keep shrinking until the text fits
   while (fontSize > MIN_FONT_SIZE) {
-    ctx.font = `900 ${fontSize}px "Lovelo", sans-serif`;
+    ctx.font = `900 ${fontSize}px "Samarkan", sans-serif`;
 
     const measured = ctx.measureText(text.toUpperCase());
 
@@ -133,7 +133,7 @@ function drawCenteredText(
   }
 
   // Final font
-  ctx.font = `900 ${fontSize}px "Lovelo", sans-serif`;
+  ctx.font = `900 ${fontSize}px "Samarkan", sans-serif`;
 
   const centerX = field.x + field.width / 2;
   const centerY = field.y + field.height / 2;

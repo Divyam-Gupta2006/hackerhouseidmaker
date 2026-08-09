@@ -394,7 +394,7 @@ async function uploadGeneratedCard() {
       <nav className="border-b-2 border-[#FFC629]/30 bg-[#064B32]/60 backdrop-blur-md px-6 py-4 sticky top-0 z-50 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🌴</span>
-          <span className="font-lovelo text-lg font-black tracking-wider text-[#FFC629]">
+          <span className="font-samarkan text-lg font-black tracking-wider text-[#FFC629]">
             HH//GOA
           </span>
         </div>
@@ -426,7 +426,7 @@ async function uploadGeneratedCard() {
               <span>★</span> HACKER HOUSE GOA 2026 <span>★</span>
             </div>
 
-            <h1 className="font-lovelo text-4xl sm:text-6xl font-black uppercase tracking-tight text-[#FFC629] leading-none mb-4">
+            <h1 className="font-samarkan text-4xl sm:text-6xl font-black uppercase tracking-tight text-[#FFC629] leading-none mb-4">
               BUILD YOUR GOA IDENTITY.
             </h1>
 
@@ -463,7 +463,7 @@ async function uploadGeneratedCard() {
                 <span className="text-[10px] font-mono font-bold tracking-widest text-[#006B3C] uppercase block">
                   FORM_REF :: HH26-ENTRY
                 </span>
-                <h2 className="font-lovelo text-2xl font-black text-[#07110D]">
+                <h2 className="font-samarkan text-2xl font-black text-[#07110D]">
                   CHECK-IN DESK
                 </h2>
               </div>
@@ -498,7 +498,7 @@ async function uploadGeneratedCard() {
                     <div className="mb-2 text-3xl transition-transform group-hover:scale-110">
                       📸
                     </div>
-                    <span className="font-lovelo text-base font-black text-[#07110D] group-hover:text-[#FE017E]">
+                    <span className="font-samarkan text-base font-black text-[#07110D] group-hover:text-[#FE017E]">
                       DROP YOUR FACE HERE
                     </span>
                     <span className="mt-1 text-[11px] font-mono text-[#07110D]/60">
@@ -631,7 +631,7 @@ async function uploadGeneratedCard() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-[#FE017E] animate-ping"></span>
-                  <p className="font-lovelo text-sm font-black text-[#FFC629]">
+                  <p className="font-samarkan text-sm font-black text-[#FFC629]">
                     LIVE BUILDER CARD
                   </p>
                 </div>
@@ -668,7 +668,7 @@ async function uploadGeneratedCard() {
               
               {/* Optional Success Stamp Overlay */}
               {cardUrl && (
-                <div className="absolute -top-4 -right-4 z-20 stamp-badge border-4 border-[#FE017E] bg-[#FE017E] text-white font-lovelo px-4 py-2 text-sm font-black tracking-widest shadow-goa-dark uppercase">
+                <div className="absolute -top-4 -right-4 z-20 stamp-badge border-4 border-[#FE017E] bg-[#FE017E] text-white font-samarkan px-4 py-2 text-sm font-black tracking-widest shadow-goa-dark uppercase">
                   ✓ VISA APPROVED
                 </div>
               )}
@@ -689,7 +689,7 @@ async function uploadGeneratedCard() {
                         🏝️
                       </div>
 
-                      <p className="font-lovelo text-xl font-black text-[#FFC629] mb-2">
+                      <p className="font-samarkan text-xl font-black text-[#FFC629] mb-2">
                         AWAITING BUILDER DATA
                       </p>
 
@@ -725,7 +725,7 @@ async function uploadGeneratedCard() {
         <footer className="mt-20 border-t-4 border-[#006B3C] bg-[#064B32] p-8 text-center font-mono text-xs text-[#F3EAD7]/80 shadow-goa">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-5xl mx-auto">
             <div className="text-left">
-              <p className="font-lovelo text-lg font-black text-[#FFC629]">
+              <p className="font-samarkan text-lg font-black text-[#FFC629]">
                 HACKER HOUSE GOA 2026
               </p>
               <p className="text-[11px] text-[#F3EAD7]/60">

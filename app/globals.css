@@ -1,24 +1,8 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: "Lovelo";
-  src: url("/fonts/Lovelo-Black.woff2") format("woff2");
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Lovelo Light";
-  src: url("/fonts/Lovelo-LineLight.woff2") format("woff2");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Lovelo Black";
-  src: url("/fonts/Lovelo-Black.woff2") format("woff2");
+  font-family: "Samarkan";
+  src: url("/fonts/Samarkan%20.woff2") format("woff2");
   font-weight: 900;
   font-style: normal;
   font-display: swap;
@@ -46,8 +30,8 @@ body {
     radial-gradient(circle at 50% 50%, rgba(0, 107, 60, 0.25) 0%, transparent 70%);
 }
 
-.font-lovelo {
-  font-family: "Lovelo", "Lovelo Black", sans-serif;
+.font-samarkan {
+  font-family: "Samarkan", sans-serif;
 }
 
 /* Custom Goa retro shadow utility */
