@@ -109,39 +109,153 @@ setCardUrl(null);
   // PHOTO UPLOAD
   // -----------------------------
 
-  async function handlePhotoUpload(
-    e: ChangeEvent<HTMLInputElement>,
-  ) {
-    const file = e.target.files?.[0];
+ async function handlePhotoUpload(
+  e: ChangeEvent<HTMLInputElement>,
+) {
+  const file = e.target.files?.[0];
 
-    if (!file) return;
+  if (!file) return;
 
-    try {
-      setIsProcessing(true);
+  try {
+    setIsProcessing(true);
 
-      const blob = await removeBackground(file);
+    // --------------------------------
+    // 1. Load original image
+    // --------------------------------
 
-      const url = URL.createObjectURL(blob);
+    const originalUrl =
+      URL.createObjectURL(file);
 
-      const image = new Image();
+    const originalImage =
+      new Image();
 
-      image.onload = () => {
-        setPhoto(image);
-        URL.revokeObjectURL(url);
-        setIsProcessing(false);
-      };
+    originalImage.src = originalUrl;
 
-      image.onerror = () => {
-        console.error("Could not load processed image");
-        setIsProcessing(false);
-      };
+    await new Promise<void>((resolve, reject) => {
+      originalImage.onload = () => resolve();
+      originalImage.onerror = () =>
+        reject(
+          new Error("Could not load image"),
+        );
+    });
 
-      image.src = url;
-    } catch (error) {
-      console.error("Background removal failed:", error);
-      setIsProcessing(false);
+    URL.revokeObjectURL(originalUrl);
+
+    // --------------------------------
+    // 2. Downscale before AI processing
+    // --------------------------------
+
+    const MAX_SIZE = 1600;
+
+    let width = originalImage.naturalWidth;
+    let height = originalImage.naturalHeight;
+
+    const scale =
+      Math.min(
+        1,
+        MAX_SIZE / Math.max(width, height),
+      );
+
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+
+    const resizeCanvas =
+      document.createElement("canvas");
+
+    resizeCanvas.width = width;
+    resizeCanvas.height = height;
+
+    const resizeCtx =
+      resizeCanvas.getContext("2d");
+
+    if (!resizeCtx) {
+      throw new Error(
+        "Could not create resize canvas",
+      );
     }
+
+    resizeCtx.drawImage(
+      originalImage,
+      0,
+      0,
+      width,
+      height,
+    );
+
+    // JPEG keeps the input much smaller
+    const resizedBlob =
+      await new Promise<Blob>((resolve, reject) => {
+        resizeCanvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(
+                new Error(
+                  "Could not resize image",
+                ),
+              );
+            }
+          },
+          "image/jpeg",
+          0.9,
+        );
+      });
+
+    // --------------------------------
+    // 3. Run background removal
+    // --------------------------------
+
+    const processedBlob =
+      await removeBackground(
+        resizedBlob,
+      );
+
+    // --------------------------------
+    // 4. Load processed image
+    // --------------------------------
+
+    const processedUrl =
+      URL.createObjectURL(
+        processedBlob,
+      );
+
+    const image =
+      new Image();
+
+    image.onload = () => {
+      setPhoto(image);
+      setCardUrl(null);
+      setIsProcessing(false);
+
+      URL.revokeObjectURL(
+        processedUrl,
+      );
+    };
+
+    image.onerror = () => {
+      console.error(
+        "Could not load processed image",
+      );
+
+      setIsProcessing(false);
+
+      URL.revokeObjectURL(
+        processedUrl,
+      );
+    };
+
+    image.src = processedUrl;
+
+  } catch (error) {
+    console.error(
+      "Background removal failed:",
+      error,
+    );
+
+    setIsProcessing(false);
   }
+}
 
 async function uploadGeneratedCard() {
   if (!photo || !housePass) return;
