@@ -207,7 +207,45 @@ async function loadTemplate(): Promise<HTMLImageElement> {
     image.src = "/template.png";
   });
 }
+async function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
 
+    image.onload = () => resolve(image);
+    image.onerror = () =>
+      reject(new Error(`Failed to load image: ${src}`));
+
+    image.src = src;
+  });
+}
+
+function drawRotatedImage(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  rotation: number,
+) {
+  const centerX = x + width / 2;
+  const centerY = y + height / 2;
+
+  ctx.save();
+
+  ctx.translate(centerX, centerY);
+  ctx.rotate((rotation * Math.PI) / 180);
+
+  ctx.drawImage(
+    image,
+    -width / 2,
+    -height / 2,
+    width,
+    height,
+  );
+
+  ctx.restore();
+}
 async function createBarcode(
   value: string,
 ): Promise<HTMLImageElement> {
@@ -251,18 +289,47 @@ export async function renderCard(
     throw new Error("Could not create canvas context");
   }
 
-  // 1. Load the Canva template
-  const template = await loadTemplate();
+  // 1. Load template + decorative assets
+const template = await loadTemplate();
 
-  // 2. Draw template first
-  ctx.drawImage(template, 0, 0, WIDTH, HEIGHT);
+const [hat, coconut] = await Promise.all([
+  loadImage("/hat.png"),
+  loadImage("/coconut.png"),
+]);
 
-  // 3. Draw user photo
-  if (data.photo) {
-    drawPhoto(ctx, data.photo);
-  }
+// 2. Draw template first
+ctx.drawImage(template, 0, 0, WIDTH, HEIGHT);
 
-  // 4. Dynamic text
+// 3. Draw user photo
+if (data.photo) {
+  drawPhoto(ctx, data.photo);
+}
+
+// 4. Draw hacker hat over the photo
+drawRotatedImage(
+  ctx,
+  hat,
+  901,
+  227.8,
+  223.1,
+  229.9,
+  19.5,
+);
+
+// 5. Draw coconut over the photo
+drawRotatedImage(
+  ctx,
+  coconut,
+  635.1,
+  588.2,
+  217.8,
+  386.8,
+  0,
+);
+
+// 6. Dynamic text
+
+
   drawCenteredText(ctx, data.builder, fields.builder);
   drawCenteredText(ctx, data.role, fields.role);
   drawCenteredText(ctx, data.crew, fields.crew);
