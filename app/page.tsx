@@ -3,8 +3,8 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import { removeBackground } from "@imgly/background-removal";
 import { renderCard } from "@/lib/cardRenderer";
+import { enableDevToolsProtection } from "@/lib/devToolsProtection";
 import { uploadCard } from "@/lib/uploadCard";
-
 
 interface FormData {
   builder: string;
@@ -23,6 +23,8 @@ const initialData: FormData = {
   beachBag: ["", "", ""],
   callsign: "",
 };
+
+
 
 function generateHousePass() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -51,6 +53,10 @@ export default function Home() {
   useEffect(() => {
     setHousePass(generateHousePass());
   }, []);
+
+  useEffect(() => {
+  return enableDevToolsProtection();
+}, []);
 
 useEffect(() => {
   if (!housePass) return;
@@ -435,13 +441,6 @@ async function handlePhotoUpload(
         </div>
       </div>
 
-      <div className="absolute top-[52%] left-[3%] pointer-events-none select-none z-0 hidden xl:block -rotate-6 opacity-30">
-        <div className="border border-[#FFC629] bg-[#07110D] p-2 text-[10px] font-mono text-[#FFC629] max-w-[160px]">
-          &gt; SYS_GOA_ONLINE<br />
-          &gt; LOC: 15.2993° N<br />
-          &gt; STATUS: VIBING
-        </div>
-      </div>
 
 
 
