@@ -123,7 +123,10 @@ async function handlePhotoUpload(
 
     let processedFile: File | Blob = file;
 
+    // ---------------------------------------
     // Convert iPhone HEIC/HEIF → JPEG
+    // ---------------------------------------
+
     const isHEIC =
       file.type === "image/heic" ||
       file.type === "image/heif" ||
@@ -131,7 +134,9 @@ async function handlePhotoUpload(
       file.name.toLowerCase().endsWith(".heif");
 
     if (isHEIC) {
-      const { default: heic2any } = await import("heic2any");
+      const { default: heic2any } =
+        await import("heic2any");
+
       const converted = await heic2any({
         blob: file,
         toType: "image/jpeg",
@@ -143,10 +148,63 @@ async function handlePhotoUpload(
         : converted;
     }
 
-    // Background removal
-    const blob = await removeBackground(
-      processedFile,
-    );
+    // ---------------------------------------
+    // TRY REMOVE.BG FIRST
+    // ---------------------------------------
+
+    let blob: Blob;
+
+    try {
+      const apiFormData = new FormData();
+
+      apiFormData.append(
+        "image",
+        processedFile,
+        file.name || "photo.png"
+      );
+
+      const response = await fetch(
+        "/api/remove-background",
+        {
+          method: "POST",
+          body: apiFormData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `remove.bg backend failed: ${response.status}`
+        );
+      }
+
+      blob = await response.blob();
+
+      console.log(
+        "✅ Background removed using remove.bg"
+      );
+
+    } catch (error) {
+      console.warn(
+        "⚠️ remove.bg failed. Falling back to IMG.LY...",
+        error
+      );
+
+      // ---------------------------------------
+      // FALLBACK → IMG.LY
+      // ---------------------------------------
+
+      blob = await removeBackground(
+        processedFile
+      );
+
+      console.log(
+        "✅ Background removed using IMG.LY fallback"
+      );
+    }
+
+    // ---------------------------------------
+    // LOAD PROCESSED IMAGE
+    // ---------------------------------------
 
     const url = URL.createObjectURL(blob);
 
@@ -165,10 +223,11 @@ async function handlePhotoUpload(
 
     image.onerror = () => {
       console.error(
-        "Could not load processed image",
+        "Could not load processed image"
       );
 
       URL.revokeObjectURL(url);
+
       setIsProcessing(false);
     };
 
@@ -177,7 +236,7 @@ async function handlePhotoUpload(
   } catch (error) {
     console.error(
       "Background removal failed:",
-      error,
+      error
     );
 
     setIsProcessing(false);
