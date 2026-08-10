@@ -52,59 +52,60 @@ export default function Home() {
     setHousePass(generateHousePass());
   }, []);
 
-  useEffect(() => {
-    if (!photo || !housePass) return;
+useEffect(() => {
+  if (!housePass) return;
 
-    const timeout = setTimeout(async () => {
+  const timeout = setTimeout(async () => {
+    try {
+      const canvas = await renderCard({
+        photo,
+
+        builder: form.builder || "YOUR NAME",
+        role: form.role || "YOUR ROLE",
+        crew: form.crew || "YOUR CREW",
+        project: form.project || "YOUR PROJECT",
+
+        beachBag: [
+          form.beachBag[0] || "STACK",
+          form.beachBag[1] || "STACK",
+          form.beachBag[2] || "STACK",
+        ],
+
+        callsign: form.callsign || "YOUR CALLSIGN",
+
+        housePass,
+      });
+
+      const newResult = canvas.toDataURL("image/png");
+
+      setResult(newResult);
+
+      // The current card changed, so the previous
+      // Cloudinary upload is no longer valid.
+      setCardUrl(null);
+
+    } catch (error) {
+      console.error("CARD RENDERING FAILED");
+      console.error("RAW ERROR:", error);
+
       try {
-        const canvas = await renderCard({
-          photo,
-
-          builder: form.builder || "YOUR NAME",
-          role: form.role || "YOUR ROLE",
-          crew: form.crew || "YOUR CREW",
-          project: form.project || "YOUR PROJECT",
-
-          beachBag: [
-            form.beachBag[0] || "STACK",
-            form.beachBag[1] || "STACK",
-            form.beachBag[2] || "STACK",
-          ],
-
-          callsign: form.callsign || "YOUR CALLSIGN",
-
-          housePass,
-        });
-
-        const newResult = canvas.toDataURL("image/png");
-
-        setResult(newResult);
-
-        // The current card changed, so the previous
-        // Cloudinary upload is no longer valid.
-        setCardUrl(null);
-      } catch (error) {
-        console.error("CARD RENDERING FAILED");
-        console.error("RAW ERROR:", error);
-
-        try {
-          console.error(
-            "ERROR JSON:",
-            JSON.stringify(error, null, 2)
-          );
-        } catch {
-          console.error("Could not stringify error");
-        }
-
-        if (error instanceof Error) {
-          console.error("MESSAGE:", error.message);
-          console.error("STACK:", error.stack);
-        }
+        console.error(
+          "ERROR JSON:",
+          JSON.stringify(error, null, 2)
+        );
+      } catch {
+        console.error("Could not stringify error");
       }
-    }, 250);
 
-    return () => clearTimeout(timeout);
-  }, [form, photo, housePass]);
+      if (error instanceof Error) {
+        console.error("MESSAGE:", error.message);
+        console.error("STACK:", error.stack);
+      }
+    }
+  }, 250);
+
+  return () => clearTimeout(timeout);
+}, [form, photo, housePass]);
 
   // -----------------------------
   // PHOTO UPLOAD
@@ -184,7 +185,7 @@ async function handlePhotoUpload(
 }
 
   async function uploadGeneratedCard() {
-    if (!photo || !housePass) return;
+    if (!housePass) return;
 
     try {
       setIsProcessing(true);
@@ -313,7 +314,7 @@ async function handlePhotoUpload(
   }
 
   return (
-    <main className="min-h-screen bg-[#07110D] text-[#F3EAD7] selection:bg-[#FE017E] selection:text-white relative pb-20 overflow-hidden">
+    <main className="min-h-screen   bg-cover bg-center bg-no-repeat text-[#F3EAD7] selection:bg-[#FE017E] selection:text-white relative pb-20 overflow-hidden">
       
       {/* ========================================================= */}
       {/* BACKGROUND DECORATIVE LAYERS (WORLD OF HACKER HOUSE GOA) */}
@@ -326,11 +327,7 @@ async function handlePhotoUpload(
         </span>
       </div>
 
-      <div className="absolute top-[40%] right-[-1rem] pointer-events-none select-none z-0 hidden lg:block opacity-[0.07]">
-        <div className="font-mono text-9xl font-black text-[#F3EAD7] tracking-tighter leading-none text-right">
-          BUILD<br />SHIP<br />VIBE
-        </div>
-      </div>
+
 
       <div className="absolute bottom-32 left-4 pointer-events-none select-none z-0 hidden xl:block opacity-10">
         <span className="font-lovelo text-8xl font-black text-[#FE017E] tracking-widest">
@@ -387,11 +384,7 @@ async function handlePhotoUpload(
         </div>
       </div>
 
-      <div className="absolute top-[68%] right-[4%] pointer-events-none select-none z-0 hidden xl:block rotate-12 opacity-35">
-        <div className="border-2 border-[#FFC629] bg-[#FFC629] px-3 py-1 text-xs font-mono font-black text-[#07110D] shadow-[3px_3px_0px_0px_#FE017E]">
-          100% HUMAN BUILDER
-        </div>
-      </div>
+
 
       {/* 5. RETRO OCEAN WAVE VECTOR AT BOTTOM */}
       <div className="absolute bottom-0 left-0 w-full pointer-events-none z-0 select-none opacity-20 overflow-hidden leading-none">
