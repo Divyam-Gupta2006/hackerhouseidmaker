@@ -4,34 +4,31 @@ interface ShareCardProps {
   params: Promise<{
     id: string;
   }>;
-
-  searchParams: Promise<{
-    image?: string;
-  }>;
 }
 
 export async function generateMetadata({
   params,
-  searchParams,
 }: ShareCardProps): Promise<Metadata> {
   const { id } = await params;
-  const { image } = await searchParams;
 
-  const cardImage = image
-    ? decodeURIComponent(image)
+  const cloudName =
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+  const cardImage = cloudName
+    ? `https://res.cloudinary.com/${cloudName}/image/upload/hh-goa/${id}.png`
     : undefined;
 
   return {
-    title: `Hacker House Goa — ${id}`,
+    title: `Hacker House Goa 2026 — Builder ${id}`,
 
     description:
-      "My Hacker House Goa 2026 Builder Identity.",
+      "My Hacker House Goa 2026 Builder ID. #FrameInGoa",
 
     openGraph: {
-      title: `Hacker House Goa — ${id}`,
+      title: `Hacker House Goa 2026 — Builder ${id}`,
 
       description:
-        "My Hacker House Goa 2026 Builder Identity.",
+        "My Hacker House Goa 2026 Builder ID. #FrameInGoa",
 
       type: "website",
 
@@ -52,10 +49,10 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
 
-      title: `Hacker House Goa — ${id}`,
+      title: `Hacker House Goa 2026 — Builder ${id}`,
 
       description:
-        "My Hacker House Goa 2026 Builder Identity.",
+        "My Hacker House Goa 2026 Builder ID. #FrameInGoa",
 
       ...(cardImage
         ? {
@@ -71,11 +68,12 @@ export default async function ShareCard({
   searchParams,
 }: ShareCardProps) {
   const { id } = await params;
-  const { image } = await searchParams;
+const cloudName =
+  process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 
-  const cardImage = image
-    ? decodeURIComponent(image)
-    : null;
+const cardImage = cloudName
+  ? `https://res.cloudinary.com/${cloudName}/image/upload/hh-goa/${id}.png`
+  : null;
 
   return (
     <main className="min-h-screen bg-[#07110d] px-4 py-10 text-white">

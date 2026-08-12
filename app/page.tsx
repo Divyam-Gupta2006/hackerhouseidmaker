@@ -332,29 +332,31 @@ export default function Home() {
     }
   }
 
-  function shareToX() {
-    if (!cardUrl) return;
+function shareToX() {
+  if (!housePass) return;
 
-    const shareUrl =
-      `${window.location.origin}/card/${housePass}` +
-      `?image=${encodeURIComponent(cardUrl)}`;
+  const shareUrl =
+    `${window.location.origin}/card/${housePass}`;
 
-    const text =
-      `Just checked into Hacker House Goa 🏝️\n\n` +
-      `Building, shipping & vibing from the House.\n\n` +
-      `#FrameInGoa`;
+  const builderName =
+    form.builder?.trim() || "A Hacker House Goa builder";
 
-    const xUrl =
-      `https://x.com/intent/post?text=${encodeURIComponent(text)}` +
-      `&url=${encodeURIComponent(shareUrl)}`;
+  const text =
+    `🪪 ${builderName} just checked into Hacker House Goa 2026! 🌴\n\n` +
+    `Built my Builder ID Card with #FrameInGoa 🚀\n\n` +
+    `Get yours 👇`;
 
-    window.open(
-      xUrl,
-      "_blank",
-      "noopener,noreferrer",
-    );
-  }
+  const xUrl =
+    `https://x.com/intent/post` +
+    `?text=${encodeURIComponent(text)}` +
+    `&url=${encodeURIComponent(shareUrl)}`;
 
+  window.open(
+    xUrl,
+    "_blank",
+    "noopener,noreferrer,width=600,height=700",
+  );
+}
   // -----------------------------
   // FIELD UPDATE
   // -----------------------------
