@@ -24,7 +24,33 @@ const initialData: FormData = {
   callsign: "",
 };
 
-
+const POPULAR_TECH_STACKS = [
+  "React",
+  "Next.js",
+  "Vue.js",
+  "Svelte",
+  "TypeScript",
+  "Node.js",
+  "Python",
+  "Go",
+  "Rust",
+  "Solidity",
+  "Tailwind CSS",
+  "PyTorch",
+  "OpenAI API",
+  "LangChain",
+  "PostgreSQL",
+  "GraphQL",
+  "Docker",
+  "Kubernetes",
+  "Supabase",
+  "Ethers.js",
+  "Viem/Wagmi",
+  "Foundry",
+  "Flutter",
+  "React Native",
+  "Other",
+];
 
 function generateHousePass() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -40,6 +66,7 @@ function generateHousePass() {
 
 export default function Home() {
   const [form, setForm] = useState<FormData>(initialData);
+  const [beachBagOther, setBeachBagOther] = useState<[boolean, boolean, boolean]>([false, false, false]);
 
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
 
@@ -55,199 +82,199 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-  return enableDevToolsProtection();
-}, []);
+    return enableDevToolsProtection();
+  }, []);
 
-useEffect(() => {
-  if (!housePass) return;
+  useEffect(() => {
+    if (!housePass) return;
 
-  const timeout = setTimeout(async () => {
-    try {
-      const canvas = await renderCard({
-        photo,
-
-        builder: form.builder || "YOUR NAME",
-        role: form.role || "YOUR ROLE",
-        crew: form.crew || "YOUR CREW",
-        project: form.project || "YOUR PROJECT",
-
-        beachBag: [
-          form.beachBag[0] || "STACK",
-          form.beachBag[1] || "STACK",
-          form.beachBag[2] || "STACK",
-        ],
-
-        callsign: form.callsign || "YOUR CALLSIGN",
-
-        housePass,
-      });
-
-      const newResult = canvas.toDataURL("image/png");
-
-      setResult(newResult);
-
-      // The current card changed, so the previous
-      // Cloudinary upload is no longer valid.
-      setCardUrl(null);
-
-    } catch (error) {
-      console.error("CARD RENDERING FAILED");
-      console.error("RAW ERROR:", error);
-
+    const timeout = setTimeout(async () => {
       try {
-        console.error(
-          "ERROR JSON:",
-          JSON.stringify(error, null, 2)
-        );
-      } catch {
-        console.error("Could not stringify error");
-      }
+        const canvas = await renderCard({
+          photo,
 
-      if (error instanceof Error) {
-        console.error("MESSAGE:", error.message);
-        console.error("STACK:", error.stack);
-      }
-    }
-  }, 250);
+          builder: form.builder || "YOUR NAME",
+          role: form.role || "YOUR ROLE",
+          crew: form.crew || "YOUR CREW",
+          project: form.project || "YOUR PROJECT",
 
-  return () => clearTimeout(timeout);
-}, [form, photo, housePass]);
+          beachBag: [
+            form.beachBag[0] || "STACK",
+            form.beachBag[1] || "STACK",
+            form.beachBag[2] || "STACK",
+          ],
+
+          callsign: form.callsign || "YOUR CALLSIGN",
+
+          housePass,
+        });
+
+        const newResult = canvas.toDataURL("image/png");
+
+        setResult(newResult);
+
+        // The current card changed, so the previous
+        // Cloudinary upload is no longer valid.
+        setCardUrl(null);
+
+      } catch (error) {
+        console.error("CARD RENDERING FAILED");
+        console.error("RAW ERROR:", error);
+
+        try {
+          console.error(
+            "ERROR JSON:",
+            JSON.stringify(error, null, 2)
+          );
+        } catch {
+          console.error("Could not stringify error");
+        }
+
+        if (error instanceof Error) {
+          console.error("MESSAGE:", error.message);
+          console.error("STACK:", error.stack);
+        }
+      }
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [form, photo, housePass]);
 
   // -----------------------------
   // PHOTO UPLOAD
   // -----------------------------
 
-async function handlePhotoUpload(
-  e: ChangeEvent<HTMLInputElement>,
-) {
-  const file = e.target.files?.[0];
+  async function handlePhotoUpload(
+    e: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = e.target.files?.[0];
 
-  if (!file) return;
-
-  try {
-    setIsProcessing(true);
-
-    let processedFile: File | Blob = file;
-
-    // ---------------------------------------
-    // Convert iPhone HEIC/HEIF → JPEG
-    // ---------------------------------------
-
-    const isHEIC =
-      file.type === "image/heic" ||
-      file.type === "image/heif" ||
-      file.name.toLowerCase().endsWith(".heic") ||
-      file.name.toLowerCase().endsWith(".heif");
-
-    if (isHEIC) {
-      const { default: heic2any } =
-        await import("heic2any");
-
-      const converted = await heic2any({
-        blob: file,
-        toType: "image/jpeg",
-        quality: 0.9,
-      });
-
-      processedFile = Array.isArray(converted)
-        ? converted[0]
-        : converted;
-    }
-
-    // ---------------------------------------
-    // TRY REMOVE.BG FIRST
-    // ---------------------------------------
-
-    let blob: Blob;
+    if (!file) return;
 
     try {
-      const apiFormData = new FormData();
+      setIsProcessing(true);
 
-      apiFormData.append(
-        "image",
-        processedFile,
-        file.name || "photo.png"
-      );
+      let processedFile: File | Blob = file;
 
-      const response = await fetch(
-        "/api/remove-background",
-        {
-          method: "POST",
-          body: apiFormData,
+      // ---------------------------------------
+      // Convert iPhone HEIC/HEIF → JPEG
+      // ---------------------------------------
+
+      const isHEIC =
+        file.type === "image/heic" ||
+        file.type === "image/heif" ||
+        file.name.toLowerCase().endsWith(".heic") ||
+        file.name.toLowerCase().endsWith(".heif");
+
+      if (isHEIC) {
+        const { default: heic2any } =
+          await import("heic2any");
+
+        const converted = await heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.9,
+        });
+
+        processedFile = Array.isArray(converted)
+          ? converted[0]
+          : converted;
+      }
+
+      // ---------------------------------------
+      // TRY REMOVE.BG FIRST
+      // ---------------------------------------
+
+      let blob: Blob;
+
+      try {
+        const apiFormData = new FormData();
+
+        apiFormData.append(
+          "image",
+          processedFile,
+          file.name || "photo.png"
+        );
+
+        const response = await fetch(
+          "/api/remove-background",
+          {
+            method: "POST",
+            body: apiFormData,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `remove.bg backend failed: ${response.status}`
+          );
         }
-      );
 
-      if (!response.ok) {
-        throw new Error(
-          `remove.bg backend failed: ${response.status}`
+        blob = await response.blob();
+
+        console.log(
+          "✅ Background removed using remove.bg"
+        );
+
+      } catch (error) {
+        console.warn(
+          "⚠️ remove.bg failed. Falling back to IMG.LY...",
+          error
+        );
+
+        // ---------------------------------------
+        // FALLBACK → IMG.LY
+        // ---------------------------------------
+
+        blob = await removeBackground(
+          processedFile
+        );
+
+        console.log(
+          "✅ Background removed using IMG.LY fallback"
         );
       }
 
-      blob = await response.blob();
+      // ---------------------------------------
+      // LOAD PROCESSED IMAGE
+      // ---------------------------------------
 
-      console.log(
-        "✅ Background removed using remove.bg"
-      );
+      const url = URL.createObjectURL(blob);
+
+      const image = new Image();
+
+      image.onload = () => {
+        setPhoto(image);
+
+        // Previous uploaded card is no longer valid
+        setCardUrl(null);
+
+        URL.revokeObjectURL(url);
+
+        setIsProcessing(false);
+      };
+
+      image.onerror = () => {
+        console.error(
+          "Could not load processed image"
+        );
+
+        URL.revokeObjectURL(url);
+
+        setIsProcessing(false);
+      };
+
+      image.src = url;
 
     } catch (error) {
-      console.warn(
-        "⚠️ remove.bg failed. Falling back to IMG.LY...",
+      console.error(
+        "Background removal failed:",
         error
       );
 
-      // ---------------------------------------
-      // FALLBACK → IMG.LY
-      // ---------------------------------------
-
-      blob = await removeBackground(
-        processedFile
-      );
-
-      console.log(
-        "✅ Background removed using IMG.LY fallback"
-      );
+      setIsProcessing(false);
     }
-
-    // ---------------------------------------
-    // LOAD PROCESSED IMAGE
-    // ---------------------------------------
-
-    const url = URL.createObjectURL(blob);
-
-    const image = new Image();
-
-    image.onload = () => {
-      setPhoto(image);
-
-      // Previous uploaded card is no longer valid
-      setCardUrl(null);
-
-      URL.revokeObjectURL(url);
-
-      setIsProcessing(false);
-    };
-
-    image.onerror = () => {
-      console.error(
-        "Could not load processed image"
-      );
-
-      URL.revokeObjectURL(url);
-
-      setIsProcessing(false);
-    };
-
-    image.src = url;
-
-  } catch (error) {
-    console.error(
-      "Background removal failed:",
-      error
-    );
-
-    setIsProcessing(false);
   }
-}
 
   async function uploadGeneratedCard() {
     if (!housePass) return;
@@ -300,7 +327,7 @@ async function handlePhotoUpload(
         "❌ CURRENT CARD UPLOAD FAILED:",
         error,
       );
-    }finally{
+    } finally {
       setIsProcessing(false);
     }
   }
@@ -380,11 +407,11 @@ async function handlePhotoUpload(
 
   return (
     <main className="min-h-screen   bg-cover bg-center bg-no-repeat text-[#F3EAD7] selection:bg-[#FE017E] selection:text-white relative pb-20 overflow-hidden">
-      
+
       {/* ========================================================= */}
       {/* BACKGROUND DECORATIVE LAYERS (WORLD OF HACKER HOUSE GOA) */}
       {/* ========================================================= */}
-      
+
       {/* 1. GIANT OVERSIZED MARGIN TYPOGRAPHY */}
       <div className="absolute top-24 left-[-2rem] pointer-events-none select-none z-0 hidden lg:block opacity-10">
         <span className="font-samarkan text-[14rem] font-black text-[#FFC629] leading-none block rotate-90 origin-top-left">
@@ -456,27 +483,6 @@ async function handlePhotoUpload(
       {/* FOREGROUND CONTENT (UNCHANGED FUNCTIONAL UI) */}
       {/* ========================================================= */}
 
-      {/* MINIMAL GOA NAVIGATION */}
-      <nav className="border-b-2 border-[#FFC629]/30 bg-[#064B32]/80 backdrop-blur-md px-6 py-4 sticky top-0 z-50 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🌴</span>
-          <span className="font-samarkan text-lg font-black tracking-wider text-[#FFC629]">
-            HH//GOA
-          </span>
-        </div>
-        <div className="flex items-center gap-4 text-xs font-mono">
-          <span className="hidden sm:inline border border-[#FE017E] px-2 py-1 text-[#FE017E] uppercase tracking-widest font-bold">
-            28 — 31 OCT 2026
-          </span>
-          <a
-            href="#generator"
-            className="bg-[#FE017E] hover:bg-[#FE017E]/80 text-white font-bold px-4 py-2 transition shadow-[3px_3px_0px_0px_#FFC629] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase tracking-wider"
-          >
-            BUILD PASS ↓
-          </a>
-        </div>
-      </nav>
-
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 pt-8">
 
         {/* HERO SECTION */}
@@ -522,72 +528,6 @@ async function handlePhotoUpload(
           {/* ========================= */}
 
           <section className="border-4 border-[#006B3C] bg-[#F3EAD7] p-6 text-[#07110D] shadow-goa relative z-10">
-            
-            {/* Header Stamp */}
-            <div className="flex items-center justify-between border-b-2 border-[#07110D] pb-4 mb-6">
-              <div>
-                <span className="text-[10px] font-mono font-bold tracking-widest text-[#006B3C] uppercase block">
-                  FORM_REF :: HH26-ENTRY
-                </span>
-                <h2 className="font-samarkan text-2xl font-black text-[#07110D]">
-                  CHECK-IN DESK
-                </h2>
-              </div>
-              <div className="stamp-badge border-2 border-[#FE017E] bg-[#FE017E]/10 px-2 py-1 text-[10px] font-mono font-bold text-[#FE017E] uppercase">
-                IDENTITY DOC
-              </div>
-            </div>
-
-            {/* PHOTO UPLOADER */}
-            <div className="mb-6">
-              <label className="mb-2 flex items-center justify-between text-xs font-mono font-bold text-[#006B3C] uppercase">
-                <span>[FIELD_00] // PORTRAIT_PHOTO</span>
-                <span className="text-[10px] text-[#FE017E]">REQUIRED</span>
-              </label>
-
-              <label className="group relative flex cursor-pointer flex-col items-center justify-center border-2 border-dashed border-[#07110D] bg-[#07110D]/5 p-6 text-center transition hover:border-[#FE017E] hover:bg-[#07110D]/10">
-                
-                {photo ? (
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">📸</span>
-                    <div className="text-left">
-                      <span className="font-bold text-sm text-[#07110D] block uppercase">
-                        CHANGE BUILDER PHOTO
-                      </span>
-                      <span className="text-[10px] font-mono text-[#006B3C]">
-                        BACKGROUND AUTOMATICALLY REMOVED
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="mb-2 text-3xl transition-transform group-hover:scale-110">
-                      📸
-                    </div>
-                    <span className="font-samarkan text-base font-black text-[#07110D] group-hover:text-[#FE017E]">
-                      DROP YOUR FACE HERE
-                    </span>
-                    <span className="mt-1 text-[11px] font-mono text-[#07110D]/60">
-                      PASSPORT STYLE • JPG, PNG, WEBP
-                    </span>
-                  </>
-                )}
-
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-                  onChange={handlePhotoUpload}
-                  disabled={isProcessing}
-                  className="hidden"
-                />
-              </label>
-
-              {isProcessing && (
-                <div className="mt-3 flex items-center justify-center gap-2 border-2 border-[#FE017E] bg-[#FE017E]/10 p-2 text-xs font-mono font-bold text-[#FE017E] animate-pulse">
-                  <span>⚡</span> FORGING PHOTO & REMOVING BG...
-                </div>
-              )}
-            </div>
 
             {/* BUILDER */}
             <Input
@@ -636,24 +576,70 @@ async function handlePhotoUpload(
             {/* BEACH BAG */}
             <div className="mb-5">
               <label className="mb-2 block text-xs font-mono font-bold text-[#006B3C] uppercase">
-                [FIELD_05] // BEACH BAG (TECH STACK)
+                BEACH BAG (TECH STACK)
               </label>
 
               <div className="grid grid-cols-3 gap-2">
-                {form.beachBag.map((value, index) => (
-                  <input
-                    key={index}
-                    value={value}
-                    onChange={(e) =>
-                      updateBeachBag(
-                        index,
-                        e.target.value,
-                      )
-                    }
-                    placeholder={`Stack 0${index + 1}`}
-                    className="w-full border-2 border-[#07110D] bg-white px-3 py-2 text-xs font-mono font-bold text-[#07110D] placeholder:text-[#07110D]/30 outline-none transition focus:border-[#FE017E] focus:ring-1 focus:ring-[#FE017E]"
-                  />
-                ))}
+                {form.beachBag.map((value, index) => {
+                  const isPreset = POPULAR_TECH_STACKS.includes(value) && value !== "Other";
+                  const showCustomInput = beachBagOther[index] || (!isPreset && value !== "");
+
+                  return (
+                    <div key={index} className="flex flex-col">
+                      <select
+                        value={
+                          beachBagOther[index]
+                            ? "Other"
+                            : isPreset
+                            ? value
+                            : value ? "Other" : ""
+                        }
+                        onChange={(e) => {
+                          const selected = e.target.value;
+                          if (selected === "Other") {
+                            setBeachBagOther((prev) => {
+                              const next = [...prev] as [boolean, boolean, boolean];
+                              next[index] = true;
+                              return next;
+                            });
+                            updateBeachBag(index, isPreset ? "" : value);
+                          } else {
+                            setBeachBagOther((prev) => {
+                              const next = [...prev] as [boolean, boolean, boolean];
+                              next[index] = false;
+                              return next;
+                            });
+                            updateBeachBag(index, selected);
+                          }
+                        }}
+                        className={`w-full border-2 border-[#07110D] bg-white px-2 py-2 text-xs font-mono font-medium outline-none transition focus:border-[#FE017E] focus:ring-1 focus:ring-[#FE017E] cursor-pointer ${
+                          (beachBagOther[index] ? "Other" : isPreset ? value : value ? "Other" : "")
+                            ? "text-[#07110D]"
+                            : "text-[#07110D]/40"
+                        }`}
+                      >
+                        <option value="" className="text-[#07110D]/40">{`Stack 0${index + 1}`}</option>
+                        {POPULAR_TECH_STACKS.map((stack) => (
+                          <option key={stack} value={stack} className="text-[#07110D]">
+                            {stack}
+                          </option>
+                        ))}
+                      </select>
+
+                      {showCustomInput && (
+                        <input
+                          type="text"
+                          value={value}
+                          onChange={(e) =>
+                            updateBeachBag(index, e.target.value)
+                          }
+                          placeholder="Type tech stack..."
+                          className="mt-1.5 w-full border-2 border-[#FE017E] bg-white px-2 py-1.5 text-xs font-mono font-medium text-[#07110D] placeholder:text-[#07110D]/40 outline-none focus:ring-1 focus:ring-[#FE017E]"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -667,6 +653,57 @@ async function handlePhotoUpload(
                 updateField("callsign", value)
               }
             />
+
+            {/* PHOTO UPLOADER */}
+            <div className="mb-6">
+              <label className="mb-2 flex items-center justify-between text-xs font-mono font-bold text-[#006B3C] uppercase">
+                <span>PORTRAIT_PHOTO</span>
+                <span className="text-[10px] text-[#FE017E]">REQUIRED</span>
+              </label>
+
+              <label className="group relative flex cursor-pointer flex-col items-center justify-center border-2 border-dashed border-[#07110D] bg-[#07110D]/5 p-6 text-center transition hover:border-[#FE017E] hover:bg-[#07110D]/10">
+
+                {photo ? (
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">📸</span>
+                    <div className="text-left">
+                      <span className="font-bold text-sm text-[#07110D] block uppercase">
+                        CHANGE BUILDER PHOTO
+                      </span>
+                      <span className="text-[10px] font-mono text-[#006B3C]">
+                        BACKGROUND AUTOMATICALLY REMOVED
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-2 text-3xl transition-transform group-hover:scale-110">
+                      📸
+                    </div>
+                    <span className="font-samarkan text-base font-black text-[#07110D] group-hover:text-[#FE017E]">
+                      DROP YOUR FACE HERE
+                    </span>
+                    <span className="mt-1 text-[11px] font-mono text-[#07110D]/60">
+                      PASSPORT STYLE • JPG, PNG, WEBP
+                    </span>
+                  </>
+                )}
+
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                  onChange={handlePhotoUpload}
+                  disabled={isProcessing}
+                  className="hidden"
+                />
+              </label>
+
+              {isProcessing && (
+                <div className="mt-3 flex items-center justify-center gap-2 border-2 border-[#FE017E] bg-[#FE017E]/10 p-2 text-xs font-mono font-bold text-[#FE017E] animate-pulse">
+                  <span>⚡</span> FORGING PHOTO & REMOVING BG...
+                </div>
+              )}
+            </div>
 
             {/* HOUSE PASS PREVIEW BOX */}
             <div className="mt-6 border-2 border-[#07110D] bg-[#006B3C] p-4 text-[#F3EAD7] shadow-[4px_4px_0px_0px_#07110D]">
@@ -731,7 +768,7 @@ async function handlePhotoUpload(
 
             {/* CARD CONTAINER */}
             <div className="card-preview-container relative w-full max-w-[600px]">
-              
+
               {/* Optional Success Stamp Overlay */}
               {cardUrl && (
                 <div className="absolute -top-4 -right-4 z-20 stamp-badge border-4 border-[#FE017E] bg-[#FE017E] text-white font-samarkan px-4 py-2 text-sm font-black tracking-widest shadow-goa-dark uppercase">
@@ -798,7 +835,7 @@ async function handlePhotoUpload(
                 GOA, INDIA · 28—31 OCT 2026
               </p>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <span className="border border-[#FFC629]/40 px-2 py-1 text-[#FFC629]">
                 #FrameInGoa
@@ -828,7 +865,7 @@ function Input({
   value,
   onChange,
 }: {
-  fieldNum: string;
+  fieldNum?: string;
   label: string;
   placeholder: string;
   value: string;
@@ -838,7 +875,7 @@ function Input({
     <div className="mb-5">
 
       <label className="mb-2 block text-xs font-mono font-bold text-[#006B3C] uppercase">
-        [FIELD_{fieldNum}] // {label}
+        {label}
       </label>
 
       <input
@@ -847,7 +884,7 @@ function Input({
           onChange(e.target.value)
         }
         placeholder={placeholder}
-        className="w-full border-2 border-[#07110D] bg-white px-4 py-2.5 text-xs font-mono font-bold text-[#07110D] placeholder:text-[#07110D]/30 outline-none transition focus:border-[#FE017E] focus:ring-1 focus:ring-[#FE017E]"
+        className="w-full border-2 border-[#07110D] bg-white px-4 py-2.5 text-xs font-mono font-medium text-[#07110D] placeholder:text-[#07110D]/30 outline-none transition focus:border-[#FE017E] focus:ring-1 focus:ring-[#FE017E]"
       />
 
     </div>
