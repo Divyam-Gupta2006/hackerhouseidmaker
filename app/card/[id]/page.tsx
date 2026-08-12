@@ -65,7 +65,6 @@ export async function generateMetadata({
 
 export default async function ShareCard({
   params,
-  searchParams,
 }: ShareCardProps) {
   const { id } = await params;
 const cloudName =
